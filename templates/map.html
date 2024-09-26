@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+</head>
+<body>
+    <h1>{{ header }}</h1>
+    <div id="map" style="width: 600px; height: 400px;"></div>
+
+    <!-- Aquí inyectamos el script generado dinámicamente -->
+    {{ script_tag | safe }}
+
+</body>
+</html>

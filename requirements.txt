@@ -1,0 +1,5 @@
+starlette
+uvicorn
+pydantic
+jinja2
+aiofiles
