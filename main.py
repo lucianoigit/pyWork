@@ -1,17 +1,17 @@
 from pywork import Framework
-import routes.map_routes as map_routes  # Importamos las rutas
-from services.map_service import MapService  # Importamos el servicio de mapas
+from services.map_service import MapService  # Implementación concreta
+from services.IMapService import IMapService  # Interfaz
 
-# Crear la instancia del framework
+# Inicializar la aplicación
 app = Framework()
 
-# Registrar dependencias (MapService)
-map_service = MapService()
-app.register_dependency("map_service", map_service)
+# Registrar la implementación de la interfaz
+app.register_dependency(IMapService, MapService())
 
-# Registrar módulos de rutas
-app.register_module(map_routes.module)
+# Cargar las rutas desde el directorio "routes"
+import routes.map_routes as map_routes  # Importar las rutas de los mapas
+map_routes.setup_routes(app)  # Registrar las rutas en la aplicación
 
-# Ejecutar el servidor
+# Ejecutar la aplicación
 if __name__ == "__main__":
     app.run()

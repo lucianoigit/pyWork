@@ -1,3 +1,4 @@
+import logging
 from starlette.responses import JSONResponse, HTMLResponse
 from starlette.routing import Route
 from starlette.applications import Starlette
@@ -12,29 +13,34 @@ SCRIPTS_DIR = "pywork/static"
 if not os.path.exists(SCRIPTS_DIR):
     os.makedirs(SCRIPTS_DIR)
 
+# Configurar el logger
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 class Framework:
     def __init__(self):
         self.routes = []
         self.dependencies = {}  # Contenedor de dependencias
-        # Configurar Jinja2 para usar la carpeta 'templates'
         self.template_env = Environment(loader=FileSystemLoader('templates'))
+        logger.debug("Framework inicializado")
 
-    def register_dependency(self, name: str, dependency):
-        """Registrar una dependencia en el contenedor"""
-        self.dependencies[name] = dependency
+    def register_dependency(self, abstract_class, implementation_instance):
+        """Registrar una dependencia en el contenedor asociada a una interfaz o clase abstracta"""
+        logger.debug(f"Intentando registrar {abstract_class.__name__} -> {type(implementation_instance).__name__}")
+        if abstract_class not in self.dependencies:
+            self.dependencies[abstract_class] = implementation_instance
+            logger.debug(f"Dependencia registrada: {abstract_class.__name__} -> {type(implementation_instance).__name__}")
+        else:
+            raise ValueError(f"La dependencia '{abstract_class.__name__}' ya está registrada")
 
     def inject(self, func):
-        """Inyectar dependencias automáticamente en las rutas"""
+        """Inyectar dependencias automáticamente en las rutas basado en la interfaz o clase abstracta"""
         async def wrapper(*args, **kwargs):
-            # Recorre las anotaciones de tipo de la función
             for param_name, param_type in func.__annotations__.items():
-                # Si la anotación de tipo coincide con alguna dependencia registrada
-                for dep_name, dep in self.dependencies.items():
-                    if isinstance(dep, param_type):
-                        kwargs[param_name] = dep  # Inyectar la dependencia
-                        break
+                if param_type in self.dependencies:
+                    kwargs[param_name] = self.dependencies[param_type]
                 else:
-                    raise ValueError(f"La dependencia '{param_name}' de tipo '{param_type.__name__}' no está registrada.")
+                    raise ValueError(f"No se ha registrado una implementación para '{param_type.__name__}'")
             
             try:
                 return await func(*args, **kwargs)
@@ -42,40 +48,33 @@ class Framework:
                 raise RuntimeError(f"Error ejecutando la función '{func.__name__}': {str(e)}")
         return wrapper
 
-    def get(self, path: str):
-        """Decorador para definir rutas GET"""
+    def route(self, path: str, methods: list = ["GET"]):
+        """Método para agregar rutas dinámicamente, permite múltiples métodos"""
         def decorator(func):
             func = self.inject(func)  # Inyectar dependencias automáticamente
-            async def route_handler(request):
-                try:
-                    response = await func()
-                    return HTMLResponse(response)
-                except Exception as e:
-                    # Manejo de errores: devuelve una respuesta JSON con el error
-                    return JSONResponse({"error": str(e)}, status_code=500)
-            self.routes.append(Route(path, route_handler, methods=["GET"]))
-            return func
-        return decorator
 
-    def post(self, path: str):
-        """Decorador para definir rutas POST con validación de datos"""
-        def decorator(func):
-            func = self.inject(func)  # Inyectar dependencias automáticamente
             async def route_handler(request):
                 try:
-                    # Obtener el cuerpo de la solicitud y validar con Pydantic
-                    body = await request.json()
-                    validated_data = func.__annotations__.get("data", None)
-                    if validated_data:
-                        body = validated_data(**body)  # Validar los datos
-                    response = await func(body)
+                    if "POST" in methods and request.method == "POST":
+                        # Obtener el cuerpo de la solicitud y validar con Pydantic si corresponde
+                        body = await request.json()
+                        validated_data = func.__annotations__.get("data", None)
+                        if validated_data:
+                            body = validated_data(**body)  # Validar los datos
+                        response = await func(body)
+                    else:
+                        response = await func()
+
+                    return JSONResponse(response) if "POST" in methods else HTMLResponse(response)
                 except ValidationError as e:
                     return JSONResponse({"error": e.errors()}, status_code=400)
                 except Exception as e:
-                    # Manejo de errores: devuelve una respuesta JSON con el error
+                    logger.error(f"Error en la ruta {path}: {str(e)}")
                     return JSONResponse({"error": str(e)}, status_code=500)
-                return JSONResponse(response)
-            self.routes.append(Route(path, route_handler, methods=["POST"]))
+
+            # Registrar la ruta para los métodos adecuados
+            self.routes.append(Route(path, route_handler, methods=methods))
+            logger.debug(f"Ruta {methods} registrada: {path}")
             return func
         return decorator
 
@@ -87,20 +86,18 @@ class Framework:
     def use_script(self, script_content, script_name):
         """Guarda el script en un archivo JS y devuelve la etiqueta <script>"""
         script_path = os.path.join(SCRIPTS_DIR, f"{script_name}.js")
-        
-        # Guardar el contenido del script en el archivo
         with open(script_path, "w") as script_file:
             script_file.write(script_content)
-        
-        # Retornar la etiqueta <script> para incrustar en HTML
         return f'<script src="/static/{script_name}.js"></script>'
 
     def register_module(self, module):
         """Registrar todas las rutas de un módulo"""
         self.routes.extend(module.routes)
+        logger.debug(f"Rutas del módulo {module} registradas")
 
     def run(self):
         """Método para ejecutar el servidor"""
+        logger.debug("Ejecutando el servidor en 127.0.0.1:8000")
         app = Starlette(debug=True, routes=self.routes)
         app.mount("/static", StaticFiles(directory=SCRIPTS_DIR), name="static")
         uvicorn.run(app, host="127.0.0.1", port=8000)
