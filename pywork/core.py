@@ -1,15 +1,19 @@
-# core.py
+from http.client import HTTPException
 import logging
 from starlette.responses import JSONResponse, HTMLResponse
-from starlette.routing import Route
+from starlette.routing import Route, WebSocketRoute
 from starlette.applications import Starlette
 from starlette.staticfiles import StaticFiles
+from starlette.middleware.cors import CORSMiddleware
+from jose import JWTError, jwt  # Necesita 'python-jose'
 import uvicorn
+import os
+from pydantic import ValidationError
 from jinja2 import Environment, FileSystemLoader
+from .Dependency_container import container, LifeCycle  # Contenedor de dependencias ya implementado
 from functools import wraps
-from .Dependency_container import container, LifeCycle  # Importamos el contenedor y ciclos de vida
 
-# Configurar el logger
+# Configuración del logger
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -26,7 +30,7 @@ class Framework:
     def get_dependency(self, abstract_class):
         """Obtener una dependencia registrada por su clase abstracta"""
         return container.resolve(abstract_class)
-        
+
     def inject(self, func):
         """Inyectar dependencias automáticamente en las rutas."""
         @wraps(func)
@@ -53,7 +57,7 @@ class Framework:
                         response = await func(data=body)
                     else:
                         response = await func()
-                    
+
                     return JSONResponse(response) if "POST" in methods else HTMLResponse(response)
                 except ValidationError as e:
                     return JSONResponse({"error": e.errors()}, status_code=400)
@@ -79,9 +83,78 @@ class Framework:
             script_file.write(script_content)
         return f'<script src="/static/{script_name}.js"></script>'
 
-    def run(self):
-        """Método para ejecutar el servidor"""
+    def websocket(self, path: str):
+        """Registro de WebSockets en una ruta"""
+        def decorator(func):
+            async def websocket_handler(websocket):
+                await websocket.accept()
+                await func(websocket)
+                await websocket.close()
+            self.routes.append(WebSocketRoute(path, websocket_handler))
+            logger.debug(f"WebSocket registrado en {path}")
+            return func
+        return decorator
+
+    def add_cors(self, app, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]):
+        """Configurar middleware CORS para la app"""
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=allow_origins,
+            allow_methods=allow_methods,
+            allow_headers=allow_headers,
+        )
+
+    def generate_openapi(self):
+        """Generar el esquema OpenAPI para Swagger"""
+        openapi_schema = {
+            "openapi": "3.0.0",
+            "info": {
+                "title": "API de Mi Framework",
+                "version": "1.0.0"
+            },
+            "paths": {}
+        }
+        for route in self.routes:
+            openapi_schema["paths"][route.path] = {
+                "get": {
+                    "summary": "Ruta dinámica",
+                    "responses": {
+                        "200": {
+                            "description": "Respuesta exitosa"
+                        }
+                    }
+                }
+            }
+        return openapi_schema
+
+    def token_required(self, func):
+        """Middleware para validar tokens JWT en rutas protegidas"""
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            token = kwargs.get('token')
+            if token:
+                try:
+                    decoded_token = jwt.decode(token, "secret", algorithms=["HS256"])
+                    kwargs['user'] = decoded_token['sub']
+                except JWTError:
+                    raise HTTPException(status_code=401, detail="Token inválido")
+            return func(*args, **kwargs)
+        return wrapper
+
+    def run(self, mvch_mode=False):
+        """Método para ejecutar el servidor, dependiendo de si es MVCH o Clean Architecture"""
         logger.debug("Ejecutando el servidor en 127.0.0.1:8000")
         app = Starlette(debug=True, routes=self.routes)
-        app.mount("/static", StaticFiles(directory="pywork/static"), name="static")
+
+        # Si estamos en MVCH, monta los archivos estáticos
+        if mvch_mode:
+            static_dir = "pywork/static"
+            if os.path.exists(static_dir):
+                app.mount("/static", StaticFiles(directory=static_dir), name="static")
+                logger.debug(f"Carpeta estática montada: {static_dir}")
+            else:
+                logger.warning(f"Carpeta estática no encontrada: {static_dir}. No se montará.")
+
+        # Añadir CORS en cualquier modo
+        self.add_cors(app)
         uvicorn.run(app, host="127.0.0.1", port=8000)
