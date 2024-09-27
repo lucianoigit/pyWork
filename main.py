@@ -5,9 +5,6 @@ from services.IMapService import IMapService  # Interfaz
 # Inicializar la aplicación
 app = Framework()
 
-# Registrar la implementación de la interfaz
-app.register_dependency(IMapService, MapService())
-
 # Cargar las rutas desde el directorio "routes"
 import routes.map_routes as map_routes  # Importar las rutas de los mapas
 map_routes.setup_routes(app)  # Registrar las rutas en la aplicación
