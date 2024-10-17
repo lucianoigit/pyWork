@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="pywork",
+    name="pyWork",
     version="0.0.1",
     description="Un framework minimalista con Jinja2, Pydantic, y soporte para inyección de dependencias",
-    author="Luciano",
+    author="Luciano Iriarte",
     author_email="lucianoiriartegit@gmail.com",
     packages=find_packages(include=['pywork', 'pywork.*']),  # Incluye pywork y sus submódulos
     include_package_data=True,  # Incluir archivos de datos como plantillas y archivos estáticos
