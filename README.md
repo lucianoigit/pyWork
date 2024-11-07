@@ -52,12 +52,19 @@ pyWork uses a Clean Architecture structure that separates responsibilities into 
 ### Folder Structure
 
 1- api/routes: Defines API routes. Each endpoint is configured here and may depend on services from the application layer.
+
 2- aplicacion/abstractions: Contains interfaces or abstractions for services that are implemented in the application layer.
+
 3- aplicacion/dependency_injection: Sets up application dependencies, registering the services required for execution.
+
 4- aplicacion/services: Contains business logic in the form of services, such as UsuarioService.
+
 5- dominio/entities: Defines domain entities that represent core business concepts, such as Usuario.
+
 6- dominio/repositories: Defines interfaces for repositories, like UsuarioRepository, which are implemented in the infrastructure layer.
+
 7- infraestructura/dependency_injection: Sets up infrastructure dependencies, such as specific repository implementations.
+
 8- infraestructura/repositories: Implements repository interfaces defined in the domain layer, such as UsuarioRepositoryImpl, which manages user storage.
 
 Example Configuration in main.py
