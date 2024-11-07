@@ -8,13 +8,12 @@ from starlette.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
 import uvicorn
 import os
-import asyncio
 from pydantic import ValidationError
 from jinja2 import Environment, FileSystemLoader
-from .Dependency_container import container, LifeCycle  # Contenedor de dependencias
+from .Dependency_container import container, LifeCycle
 from functools import wraps
 import logging
-import paho.mqtt.client as mqtt  # Protocolo MQTT para IoT
+import paho.mqtt.client as mqtt
 
 # Configuración del logger
 logging.basicConfig(level=logging.DEBUG)
@@ -233,9 +232,10 @@ class Framework:
         client = self.mqtt_clients.get(client_id or list(self.mqtt_clients.keys())[0])
         if client:
             client.loop_start()
-    # Ejecutar el servidor
-    def run(self, mvch_mode=False):
-        logger.debug("Ejecutando el servidor en 127.0.0.1:8000")
+
+    # Crear una instancia de la aplicación para pruebas
+    def get_app(self, mvch_mode=False):
+        logger.debug("Configurando la aplicación de Starlette")
         app = Starlette(debug=True, routes=self.routes)
 
         # Si estamos en MVCH, monta archivos estáticos
@@ -251,4 +251,10 @@ class Framework:
         self.add_cors(app)
         app.add_middleware(SessionMiddleware, secret_key="supersecret")  # Middleware de sesión
 
+        return app  # Devolver el objeto app para pruebas
+
+    # Ejecutar el servidor
+    def run(self, mvch_mode=False):
+        logger.debug("Ejecutando el servidor en 127.0.0.1:8000")
+        app = self.get_app(mvch_mode)
         uvicorn.run(app, host="127.0.0.1", port=8000)
