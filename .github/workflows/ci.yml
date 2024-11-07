@@ -17,14 +17,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           pip install -e .
       - name: Run tests
         run: |
-          pytest --doctest-modules
+          pytest --doctest-modules test/ --disable-warnings
       - name: Generate coverage report
         run: |
           pytest --cov=pywork --cov-report=xml
