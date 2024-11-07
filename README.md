@@ -1,6 +1,6 @@
 # pyWork
 
-![CI](https://github.com/usuario/repositorio/actions/workflows/ci.yml/badge.svg?branch=main)
+[![CI](https://github.com/lucianoigit/pywork/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lucianoigit/pywork/actions)
 [![Documentation Status](https://readthedocs.org/projects/pywork/badge/?version=latest)](https://pywork.readthedocs.io/)
 [![MIT License](https://img.shields.io/github/license/lucianoigit/pywork)](LICENSE)
 
