@@ -9,13 +9,15 @@ def client():
     # Instancia el framework y define una ruta de prueba
     framework = Framework()
 
-    @framework.route("/test", methods=["GET"])
+    @framework.route("/test", methods=["GET", "OPTIONS"])  # Incluye OPTIONS aquí
     async def test_route():
         return {"message": "Ruta de prueba exitosa"}
 
     # Obtener la aplicación configurada con CORS habilitado
     app = framework.get_app(mvch_mode=False)
-    framework.add_cors(app, allow_origins=["*"], allow_methods=["GET"], allow_headers=["Authorization"])
+    
+    # Ajusta allow_methods para permitir todos los métodos
+    framework.add_cors(app, allow_origins=["*"], allow_methods=["*"], allow_headers=["Authorization"])
     
     return TestClient(app)
 

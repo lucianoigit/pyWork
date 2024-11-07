@@ -8,12 +8,15 @@ from starlette.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
 import uvicorn
 import os
+import asyncio
 from pydantic import ValidationError
 from jinja2 import Environment, FileSystemLoader
-from .Dependency_container import container, LifeCycle
+from .Dependency_container import container, LifeCycle  # Contenedor de dependencias
 from functools import wraps
 import logging
-import paho.mqtt.client as mqtt
+import paho.mqtt.client as mqtt  # Protocolo MQTT para IoT
+
+from starlette.responses import JSONResponse, Response  # Asegúrate de importar Response
 
 # Configuración del logger
 logging.basicConfig(level=logging.DEBUG)
@@ -69,7 +72,8 @@ class Framework:
             return await func(*args, **kwargs)
         return wrapper
 
-    # Definir rutas con múltiples métodos
+
+    # En el método `route` del Framework
     def route(self, path: str, methods: list = ["GET"]):
         def decorator(func):
             func = self.inject(func)
@@ -84,7 +88,12 @@ class Framework:
                         response = await func(data=body)
                     else:
                         response = await func()
-                    return JSONResponse(response) if "POST" in methods else HTMLResponse(response)
+
+                    # Verifica si la respuesta es una instancia de Response
+                    if isinstance(response, Response):
+                        return response  # Retorna directamente si es JSONResponse o HTMLResponse
+                    else:
+                        return JSONResponse(response)  # Envuelve el diccionario en JSONResponse si es necesario
                 except ValidationError as e:
                     return JSONResponse({"error": e.errors()}, status_code=400)
                 except Exception as e:
@@ -95,6 +104,7 @@ class Framework:
             logger.debug(f"Ruta {methods} registrada: {path}")
             return func
         return decorator
+
 
     # Renderizar plantillas usando Jinja2
     def render_template(self, template_name, **context):
@@ -152,7 +162,6 @@ class Framework:
             }
         return openapi_schema
 
-    # Middleware para validar tokens JWT y permisos integrados
     def token_required(self, required_permissions=None):
         """Middleware que valida el token JWT y permisos opcionales."""
         def decorator(func):
@@ -168,6 +177,7 @@ class Framework:
                     request.state.user = payload["sub"]
                     request.state.permissions = payload.get("permissions", [])
 
+                    # Verifica los permisos
                     if required_permissions:
                         user_permissions = set(request.state.permissions)
                         if not user_permissions.issuperset(set(required_permissions)):
@@ -176,11 +186,14 @@ class Framework:
                 except JWTError:
                     return JSONResponse({"error": "Token inválido"}, status_code=401)
 
+                # Llama a la función decorada pasando el request
                 return await func(request, *args, **kwargs)
             return wrapper
         return decorator
 
+
     # Configurar rutas genéricas para autenticación personalizada
+
     def configure_route(self, path: str, methods: list = ["GET"], middleware_func=None):
         def decorator(func):
             if middleware_func:
@@ -193,7 +206,12 @@ class Framework:
                         response = await func(request, body)
                     else:
                         response = await func(request)
+                    
+                    # Verificar si la respuesta es una instancia de Response (como JSONResponse)
+                    if isinstance(response, Response):
+                        return response
                     return JSONResponse(response)
+                    
                 except Exception as e:
                     logger.error(f"Error en la ruta {path}: {str(e)}")
                     return JSONResponse({"error": str(e)}, status_code=500)
@@ -202,6 +220,7 @@ class Framework:
             logger.debug(f"Ruta {methods} registrada: {path}")
             return func
         return decorator
+
 
     # Soporte para MQTT (Protocolo de Comunicación IoT)
     def mqtt_connect(self, broker_url, broker_port, on_message_callback, client_id=None):
@@ -232,9 +251,9 @@ class Framework:
         client = self.mqtt_clients.get(client_id or list(self.mqtt_clients.keys())[0])
         if client:
             client.loop_start()
-
-    # Crear una instancia de la aplicación para pruebas
+    # Ejecutar el servidor
     def get_app(self, mvch_mode=False):
+        """Configurar y devolver la aplicación de Starlette"""
         logger.debug("Configurando la aplicación de Starlette")
         app = Starlette(debug=True, routes=self.routes)
 
@@ -247,14 +266,14 @@ class Framework:
             else:
                 logger.warning(f"Carpeta estática no encontrada: {static_dir}. No se montará.")
 
-        # Añadir CORS en cualquier modo
+        # Añadir CORS y sesión en cualquier modo
         self.add_cors(app)
         app.add_middleware(SessionMiddleware, secret_key="supersecret")  # Middleware de sesión
 
-        return app  # Devolver el objeto app para pruebas
+        return app  # Devuelve la instancia de la aplicación
 
-    # Ejecutar el servidor
     def run(self, mvch_mode=False):
-        logger.debug("Ejecutando el servidor en 127.0.0.1:8000")
+        """Inicia el servidor usando Uvicorn"""
         app = self.get_app(mvch_mode)
+        logger.debug("Ejecutando el servidor en 127.0.0.1:8000")
         uvicorn.run(app, host="127.0.0.1", port=8000)
