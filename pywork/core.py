@@ -11,12 +11,12 @@ import os
 import asyncio
 from pydantic import ValidationError
 from jinja2 import Environment, FileSystemLoader
-from .Dependency_container import container, LifeCycle  # Contenedor de dependencias
+from .Dependency_container import container, LifeCycle 
 from functools import wraps
 import logging
-import paho.mqtt.client as mqtt  # Protocolo MQTT para IoT
+import paho.mqtt.client as mqtt  
 
-from starlette.responses import JSONResponse, Response  # Asegúrate de importar Response
+from starlette.responses import JSONResponse, Response 
 
 # Configuración del logger
 logging.basicConfig(level=logging.DEBUG)
@@ -26,9 +26,9 @@ class Framework:
     def __init__(self):
         self.routes = []
         self.template_env = Environment(loader=FileSystemLoader('templates'))
-        self.oauth = OAuth()  # Integración de OAuth
-        self.providers = {}  # Almacenar proveedores OAuth
-        self.mqtt_clients = {}  # Almacenar clientes MQTT por conexión
+        self.oauth = OAuth()  
+        self.providers = {}  
+        self.mqtt_clients = {}  
         logger.debug("Framework inicializado")
 
     # Configurar OAuth con un proveedor
@@ -89,7 +89,7 @@ class Framework:
                     else:
                         response = await func()
 
-                    # Verifica si la respuesta es una instancia de Response
+                  
                     if isinstance(response, Response):
                         return response  # Retorna directamente si es JSONResponse o HTMLResponse
                     else:
