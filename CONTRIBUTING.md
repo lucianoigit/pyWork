@@ -68,7 +68,7 @@ git checkout -b your-branch-name
 Before submitting, ensure all tests pass and your code adheres to pyWork’s style conventions. Run the tests and generate an HTML coverage report with:
 
 ```bash
-bash scripts/test-cov-html.sh
+bash test/test-cov-html.sh
 
 ```
 After running this command, open the file ./htmlcov/index.html in your browser to view an interactive test coverage report.
