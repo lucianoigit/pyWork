@@ -1,23 +1,36 @@
 from setuptools import setup, find_packages
 
+# Cargar dependencias de requirements.txt
+try:
+    with open("requirements.txt", "r", encoding="utf-8") as fh:
+        requirements = fh.read().splitlines()
+except Exception as e:
+    print("Error loading requirements.txt:", e)
+    requirements = []
+
+# Cargar descripción desde README.md
+try:
+    with open("README.md", "r", encoding="utf-8") as fh:
+        long_description = fh.read()
+except Exception as e:
+    print("Error loading README.md:", e)
+    long_description = ""
+
 setup(
     name="pyWork",
     version="0.0.1",
-    description="Un framework minimalista con Jinja2, Pydantic, y soporte para inyección de dependencias",
+    description="This framework is designed to simplify the development of web applications by providing an easy-to-use interface for rendering templates with Jinja2, validating data with Pydantic, and managing dependencies through a robust container system.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author="Luciano Iriarte",
     author_email="lucianoiriartegit@gmail.com",
-    packages=find_packages(include=['pywork', 'pywork.*']),  # Incluye pywork y sus submódulos
-    include_package_data=True,  # Incluir archivos de datos como plantillas y archivos estáticos
-    install_requires=[
-        "starlette",
-        "uvicorn",
-        "jinja2",
-        "pydantic",
-        "aiofiles",  # Para servir archivos estáticos
-    ],
+    url="https://github.com/lucianoigit/pywork",
+    packages=find_packages(include=['pywork', 'pywork.*']),
+    include_package_data=True,
+    install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'create-pywork=pywork.scripts:create_project',  # Comando para crear un proyecto nuevo
+            'pywork=pywork.scripts:manage_project',
         ],
     },
     classifiers=[
