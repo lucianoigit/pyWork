@@ -17,7 +17,7 @@ except Exception as e:
     long_description = ""
 
 setup(
-    name="pyWork",
+    name="pywork-framework",
     version="0.0.1",
     description="This framework is designed to simplify the development of web applications by providing an easy-to-use interface for rendering templates with Jinja2, validating data with Pydantic, and managing dependencies through a robust container system.",
     long_description=long_description,
