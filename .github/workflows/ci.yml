@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: CI
 
 on:
@@ -14,18 +13,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Clean up any previous caches
+        run: |
+          rm -rf .pytest_cache dist build  # Remover cachés y dist
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: "3.12"
+
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-          pip install pytest-cov  # Asegúrate de que pytest-cov esté instalado
-          pip install -e .
+          pip install --upgrade pip  # Actualiza pip a la última versión
+          pip install -r requirements.txt  # Instala dependencias
+          pip install -e .                # Instala en modo editable
+
       - name: Run tests
         run: |
           pytest --doctest-modules test/ --disable-warnings
+
       - name: Generate coverage report
         run: |
           pytest --cov=pywork --cov-report=xml
