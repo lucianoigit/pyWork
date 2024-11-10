@@ -48,7 +48,6 @@ create-pywork my_project clean
 
 pyWork uses a Clean Architecture structure that separates responsibilities into distinct layers. This improves the maintainability and scalability of the project. Below is a breakdown of each folder and its function within the architecture:
 
-
 ### Folder Structure
 
 1- api/routes: Defines API routes. Each endpoint is configured here and may depend on services from the application layer.
@@ -96,6 +95,8 @@ if __name__ == "__main__":
 
 Example of Routes in api/routes/routes.py
 In this file, API routes are configured using pyWork. The endpoints are designed to interact with application services, which contain business logic.
+
+Add @app.token_required(required_permissions=["admin"]) if your use case requires it
 
 ```python
 # api/routes/routes.py
