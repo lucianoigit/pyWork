@@ -14,7 +14,7 @@ pyWork is a minimalistic Python framework inspired by FastAPI, designed for both
 - **OAuth and JWT Authentication**: Secure endpoints with token-based authentication and permission validation.
 - **Project Structure Options**: Supports both Clean Architecture and MVCH (Hybrid MVC) setups.
 
-## Installation
+## Installation (at the moment it doesn't work, use git clone)
 
 To install `pyWork`, you can use pip:
 
@@ -52,19 +52,19 @@ pyWork uses a Clean Architecture structure that separates responsibilities into 
 
 1- api/routes: Defines API routes. Each endpoint is configured here and may depend on services from the application layer.
 
-2- aplicacion/abstractions: Contains interfaces or abstractions for services that are implemented in the application layer.
+2- aplication/abstractions: Contains interfaces or abstractions for services that are implemented in the application layer.
 
-3- aplicacion/dependency_injection: Sets up application dependencies, registering the services required for execution.
+3- aplication/dependency_injection: Sets up application dependencies, registering the services required for execution.
 
-4- aplicacion/services: Contains business logic in the form of services, such as UsuarioService.
+4- aplication/services: Contains business logic in the form of services, such as UsuarioService.
 
-5- dominio/entities: Defines domain entities that represent core business concepts, such as Usuario.
+5- domain/entities: Defines domain entities that represent core business concepts, such as Usuario.
 
-6- dominio/repositories: Defines interfaces for repositories, like UsuarioRepository, which are implemented in the infrastructure layer.
+6- domain/repositories: Defines interfaces for repositories, like UsuarioRepository, which are implemented in the infrastructure layer.
 
-7- infraestructura/dependency_injection: Sets up infrastructure dependencies, such as specific repository implementations.
+7- infraestructure/dependency_injection: Sets up infrastructure dependencies, such as specific repository implementations.
 
-8- infraestructura/repositories: Implements repository interfaces defined in the domain layer, such as UsuarioRepositoryImpl, which manages user storage.
+8- infraestructure/repositories: Implements repository interfaces defined in the domain layer, such as UsuarioRepositoryImpl, which manages user storage.
 
 Example Configuration in main.py
 The main.py file is the entry point of the application. It configures dependencies and routes before starting the server.
