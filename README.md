@@ -72,8 +72,8 @@ The main.py file is the entry point of the application. It configures dependenci
 ```python
 # main.py
 from api.routes.routes import setup_routes
-from infraestructura.dependency_injection.dependency_injection import register_infrastructure_dependencies
-from aplicacion.dependency_injection.dependency_injection import register_application_dependencies
+from infraestructure.dependency_injection.dependency_injection import register_infrastructure_dependencies
+from aplication.dependency_injection.dependency_injection import register_application_dependencies
 from pywork import Framework
 
 app = Framework()
@@ -100,7 +100,7 @@ Add @app.token_required(required_permissions=["admin"]) if your use case require
 
 ```python
 # api/routes/routes.py
-from aplicacion.abstractions.usuario_service import IUsuarioService
+from aplication.abstractions.usuario_service import IUsuarioService
 from pywork import Framework
 from pydantic import BaseModel
 
@@ -132,11 +132,11 @@ Application Dependency Injection in aplicacion/dependency_injection/dependency_i
 This file registers application-level dependencies, associating interfaces with their implementations.
 
 ```python
-# aplicacion/dependency_injection/dependency_injection.py
+# aplication/dependency_injection/dependency_injection.py
 def register_application_dependencies(app):
-    from aplicacion.services.usuario_service import UsuarioService
-    from aplicacion.abstractions.usuario_service import IUsuarioService
-    from dominio.repositories.usuario_repository import UsuarioRepository
+    from aplication.services.usuario_service import UsuarioService
+    from aplication.abstractions.usuario_service import IUsuarioService
+    from domain.repositories.usuario_repository import UsuarioRepository
 
     app.register_dependency(IUsuarioService, UsuarioService)
 
@@ -147,10 +147,10 @@ User Service Implementation in aplicacion/services/usuario_service.py
 This service class contains the business logic for managing users, using repository abstractions from the domain layer.
 
 ```python
-# aplicacion/services/usuario_service.py
-from dominio.repositories.usuario_repository import UsuarioRepository
-from aplicacion.abstractions.usuario_service import IUsuarioService
-from dominio.entities.usuario import Usuario
+# aplication/services/usuario_service.py
+from domain.repositories.usuario_repository import UsuarioRepository
+from aplication.abstractions.usuario_service import IUsuarioService
+from domain.entities.usuario import Usuario
 
 class UsuarioService(IUsuarioService):
     def __init__(self, usuario_repository: UsuarioRepository):
@@ -171,7 +171,7 @@ Domain Entity Definition in dominio/entities/usuario.py
 This file defines the Usuario entity, which represents a user in the system.
 
 ```python
-# dominio/entities/usuario.py
+# domain/entities/usuario.py
 
 class Usuario:
     def __init__(self, id_usuario: int, nombre: str, email: str):
@@ -189,9 +189,9 @@ Domain Repository Interface in dominio/repositories/usuario_repository.py
 This file defines the UsuarioRepository interface, outlining methods for user data management.
 
 ```python
-# dominio/repositories/usuario_repository.py
+# domain/repositories/usuario_repository.py
 
-from dominio.entities.usuario import Usuario
+from domain.entities.usuario import Usuario
 from abc import ABC, abstractmethod
 
 class UsuarioRepository(ABC):
@@ -211,10 +211,10 @@ Infrastructure Dependency Injection in infraestructura/dependency_injection/depe
 This file registers infrastructure-level dependencies, linking repository interfaces to their concrete implementations.
 
 ```python
-# infraestructura/dependency_injection/dependency_injection.py
+# infraestructure/dependency_injection/dependency_injection.py
 def register_infrastructure_dependencies(app):
-    from dominio.repositories.usuario_repository import UsuarioRepository
-    from infraestructura.repositories.usuario_repository_impl import UsuarioRepositoryImpl
+    from domain.repositories.usuario_repository import UsuarioRepository
+    from infraestructure.repositories.usuario_repository_impl import UsuarioRepositoryImpl
 
     app.register_dependency(UsuarioRepository, UsuarioRepositoryImpl)
 
@@ -225,9 +225,9 @@ Repository Implementation in infraestructura/repositories/usuario_repository_imp
 This file contains the implementation of the UsuarioRepository interface, handling the actual data storage for users.
 
 ```python
-# infraestructura/repositories/usuario_repository_impl.py
-from dominio.entities.usuario import Usuario
-from dominio.repositories.usuario_repository import UsuarioRepository
+# infraestructure/repositories/usuario_repository_impl.py
+from domain.entities.usuario import Usuario
+from domain.repositories.usuario_repository import UsuarioRepository
 
 class UsuarioRepositoryImpl(UsuarioRepository):
     def __init__(self):
